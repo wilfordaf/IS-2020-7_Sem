@@ -1,0 +1,66 @@
+---
+- name: Run App
+  hosts: app
+  become: true
+  tasks:
+    - name: Copy Dockerfile To Targets
+      copy:
+        src: Dockerfile
+        dest: ~/django-locallibrary-tutorial
+    - name: Build App Docker Image
+      docker_image:
+        build:
+          path: ~/django-locallibrary-tutorial
+        name: django-locallibrary-tutorial
+        source: build
+    - name: Make Migrations
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        command: python manage.py makemigrations
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        detach: false
+    - name: Migrate
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        command: python manage.py migrate
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        detach: false
+    - name: Collect Static
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        command: python manage.py collectstatic --noinput --clear
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        detach: false
+    - name: Run Standard Tests
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        command: python manage.py test
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        detach: false
+    - name: Create Super User
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        command: python manage.py createsuperuser
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        detach: false
+    - name: Run Server
+      docker_container:
+        name: django-container
+        image: django-locallibrary-tutorial
+        state: started
+        recreate: true
+        published_ports:
+          - 8000:8000
+        volumes:
+          - ~/django-locallibrary-tutorial:/usr/src/app
+        command: python manage.py runserver 0.0.0.0:8000

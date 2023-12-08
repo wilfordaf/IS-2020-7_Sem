@@ -1,0 +1,8 @@
+---
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-docker.git
+  version: origin/main
+  name: docker
+  
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-nginx.git
+  version: origin/main
+  name: nginx

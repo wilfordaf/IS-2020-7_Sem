@@ -1,0 +1,7 @@
+---
+- name: Run App
+  hosts: app
+  become: true
+  tasks:
+    - name: Run Docker Compose
+      command: docker-compose -f ~/docker-compose.yml up -d

@@ -1,0 +1,15 @@
+---
+# tasks file for nginx
+- name: Open Server Port
+  ufw:
+    rule: allow
+    port: "{{ nginx_server_port }}"
+    proto: tcp
+- name: Create Nginx Directory
+  file:
+    path: "{{ nginx_path }}"
+    state: directory
+- name: Copy Config To Directory
+  copy: 
+    src: templates/default.conf
+    dest: "{{ nginx_path }}/default.conf"

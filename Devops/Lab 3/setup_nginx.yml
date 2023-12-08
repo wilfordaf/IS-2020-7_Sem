@@ -1,0 +1,10 @@
+---
+- hosts: web
+  become: true
+  roles:
+    - nginx
+  tasks:
+    - name: Copy Dockerfile
+      copy:
+        src: nginx/Dockerfile
+        dest: "{{ nginx_path }}/Dockerfile"

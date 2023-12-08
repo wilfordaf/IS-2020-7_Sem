@@ -1,0 +1,6 @@
+---
+# defaults file for nginx
+nginx_server_port: 80
+nginx_server_name: localhost
+nginx_proxy_pass: http://0.0.0.0:8000
+nginx_path: ~/nginx

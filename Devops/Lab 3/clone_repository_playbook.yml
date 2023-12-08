@@ -1,0 +1,30 @@
+---
+- name: Clone Repository
+  hosts: app
+  become: true
+  tasks:
+    - name: Install Git
+      apt:
+        name: git
+        update-cache: true
+    - name: Clone Project Repository
+      git:
+        repo: https://github.com/mdn/django-locallibrary-tutorial
+        dest: ~/django-locallibrary-tutorial
+        force: true
+    - name: Copy Updated Config
+      copy:
+        src: settings.py
+        dest: ~/django-locallibrary-tutorial/locallibrary
+    - name: Copy Entrypoint Script
+      copy:
+        src: entrypoint.sh
+        dest: ~/django-locallibrary-tutorial/entrypoint.sh
+    - name: Copy Dockerfile To Target
+      copy:
+        src: Dockerfile
+        dest: ~/django-locallibrary-tutorial
+    - name: Copy Docker Compose File
+      copy:
+        src: docker-compose.yml 
+        dest: ~/docker-compose.yml

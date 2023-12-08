@@ -1,0 +1,5 @@
+---
+# defaults file for docker
+docker_gpg_key_url: https://download.docker.com/linux/ubuntu/gpg
+docker_repository_url: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+docker_version: latest
