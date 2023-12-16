@@ -1,0 +1,44 @@
+---
+- name: Create OpenVPN Client
+  hosts: app
+  vars:
+    openvpn_path: ~/openvpn-ca
+    openvpn_path_pki: ~/openvpn-ca/pki
+    user: client1
+  become: true
+  tasks:
+    - name:  Generate Client Certificate Request
+      command: 
+        cmd: "./easyrsa gen-req {{ user }} nopass"
+        chdir: "{{ openvpn_path }}"
+    - name: Sign Client Certificate Request
+      command: 
+        cmd: "./easyrsa sign-req client {{ user }}"
+        chdir: "{{ openvpn_path }}"
+    - name: Copy Client Configuration Files
+      copy:
+        src: "{{ openvpn_path_pki }}/{{ item }}"
+        dest: "/etc/openvpn/client/{{ item | basename }}"
+        mode: 0644
+        remote_src: true
+      loop:
+        - ca.crt
+        - ta.key
+        - "private/{{ user }}.key"
+        - "issued/{{ user }}.crt"
+    - name: Copy Client Configuration File To Targets
+      copy:
+        src: "client/{{ item }}"
+        dest: "{{ openvpn_path }}/{{ item | basename }}"
+      loop:
+        - client.conf
+        - config_gen.sh
+    - name: Make Generate Config Script Executable
+      file: 
+        path: "{{ openvpn_path }}/config_gen.sh"
+        mode: 0700 
+    - name:  Generate Config 
+      command: 
+        cmd: "./config_gen.sh {{ user }}"
+        chdir: "{{ openvpn_path }}"
+        creates: "~/{{ user }}.ovpn"

@@ -1,0 +1,52 @@
+---
+- name: Setup Master
+  hosts: app
+  vars:
+    pg_configuration_path: /etc/postgresql/12/main
+    pg_data_path: /var/lib/postgresql
+    pg_custom_data_path: /home/vagrant
+    pg_custom_data_path_postgresql: 
+    pg_replica_user: { name: replica, password: replica}
+    pg_replicas_addresses: 
+      - 192.168.56.202
+    pg_databases:
+      - database1
+    pg_users:
+      - { name: user1, password: user1 }
+    pg_permissions:
+     - { database: database1, user: user1 }
+    pg_master_address: 192.168.56.201
+  become: true
+  tasks:
+    - name: Add Master Trust
+      blockinfile:
+        path: "{{ pg_configuration_path }}/pg_hba.conf"
+        create: yes
+        block: |
+          host replication postgres {{ pg_master_address }}/0 trust
+        marker: # Allow master
+      when: pg_master_address is defined
+      notify: Restart PostgreSQL Service     
+    - name: Stop PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: stopped
+    - name: Define pg_custom_data_path_postgresql
+      set_fact:
+        pg_custom_data_path_postgresql: "{{ pg_custom_data_path }}/postgresql"
+      when: pg_custom_data_path is defined
+    - name: Clear Data Directory
+      file:
+        path: "{{ pg_custom_data_path_postgresql | default(pg_data_path) }}/12/main"
+        state: absent
+    - name: Initialize Replica
+      shell: "pg_basebackup -D {{ pg_custom_data_path_postgresql | default(pg_data_path) }}/12/main -h {{ pg_master_address }} -X stream -c fast -U {{ pg_replica_user.name }} -w -R"
+    - name: Change Ownership
+      shell: "chown -R postgres {{ pg_custom_data_path_postgresql | default(pg_data_path) }}/12/main"
+      notify: Restart PostgreSQL Service
+
+  handlers:
+    - name: Restart PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: restarted

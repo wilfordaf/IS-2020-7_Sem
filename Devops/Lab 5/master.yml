@@ -1,0 +1,83 @@
+---
+- name: Setup Master
+  hosts: app
+  vars:
+    pg_configuration_path: /etc/postgresql/12/main
+    pg_data_path: /var/lib/postgresql
+    pg_custom_data_path: /home/vagrant
+    pg_replica_user: { name: replica, password: replica}
+    pg_replicas_addresses: 
+      - 192.168.0.101
+    pg_databases:
+      - database1
+    pg_users:
+      - { name: user1, password: user1 }
+    pg_permissions:
+     - { database: database1, user: user1 }
+  become: true
+  tasks:
+    - name: Create Replication User Account
+      postgresql_user:
+        name: "{{ pg_replica_user.name }}"
+        password: "{{ pg_replica_user.password }}"
+        role_attr_flags: replication
+      become_user: postgres
+    - name: Add Allowed Replications
+      blockinfile:
+        path: "{{ pg_configuration_path }}/pg_hba.conf"
+        create: yes
+        block: |
+          host replication {{ pg_replica_user.name }} {{ item }}/0 trust
+        marker: "# Allow replica {{ item }}"
+      loop: "{{ pg_replicas_addresses }}"
+      when: pg_replicas_addresses is defined
+      notify: Restart PostgreSQL Service 
+    - name: Create Databases
+      postgresql_db:
+        state: present
+        name: "{{ item }}"
+      become_user: postgres
+      when: pg_databases is defined
+      with_items:
+        - "{{ pg_databases }}"
+    - name: Create Users
+      postgresql_user:
+        state: present
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+      become_user: postgres
+      when: pg_users is defined
+      with_items:
+        - "{{ pg_users }}"
+    - name: Give Permissions
+      postgresql_privs:
+        type: database
+        database: "{{ item.database }}"
+        roles: "{{ item.user }}"
+        grant_option: no
+        privs: all
+      become_user: postgres
+      when: pg_permissions is defined
+      with_items:
+        - "{{ pg_permissions }}"
+    - name: Allow md5 Connections For Users
+      postgresql_pg_hba:
+        dest: "{{ pg_configuration_path }}/pg_hba.conf"
+        contype: host
+        databases: all
+        method: md5
+        users: "{{ item.name }}"
+        address: "0.0.0.0/0"
+        create: true
+      become_user: postgres
+      notify: Restart PostgreSQL Service
+      with_items:
+        - "{{ pg_users }}"
+      
+      
+
+  handlers:
+    - name: Restart PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: restarted

@@ -1,0 +1,9 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  become: yes
+  tasks:
+    - name: Include Role
+      include_role:
+        name: "wilfordaf.postgresql"

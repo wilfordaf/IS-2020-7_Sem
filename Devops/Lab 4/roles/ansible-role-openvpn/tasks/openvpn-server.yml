@@ -1,0 +1,86 @@
+- name: Install OpenVPN Dependencies
+  apt:
+    name:
+      - openvpn
+      - easy-rsa
+    state: present
+    update-cache: true
+- name: Make Directory For Configuration
+  command: 
+    cmd: "make-cadir {{ openvpn_path }}"
+    creates: "{{ openvpn_path }}/easyrsa"
+- name: Copy Vars To Targets
+  copy:
+    src: templates/server/vars
+    dest: "{{ openvpn_path }}"
+- name: Initialize PKI
+  command: 
+    cmd: ./easyrsa init-pki
+    chdir: "{{ openvpn_path }}"
+    creates: "{{ openvpn_path_pki }}"
+- name: Create .rnd
+  command: 
+    cmd: openssl rand -writerand .rnd
+    chdir: "{{ openvpn_path_pki }}"
+    creates: "{{ openvpn_path_pki }}/.rnd"
+- name: Build CA
+  command: 
+    cmd: ./easyrsa build-ca nopass
+    chdir: "{{ openvpn_path }}"
+    creates: "{{ openvpn_path_pki }}/ca.crt"
+- name: Generate Server Request
+  command: 
+    cmd: ./easyrsa gen-req server nopass
+    chdir: "{{ openvpn_path }}"
+- name: Sign Server Request
+  command: 
+    cmd: ./easyrsa sign-req server server
+    chdir: "{{ openvpn_path }}"
+- name: Generate DH
+  command: 
+    cmd: ./easyrsa gen-dh
+    chdir: "{{ openvpn_path }}"
+    creates: "{{ openvpn_path_pki }}/dh.pem"
+- name: Generate TA Key
+  command: 
+    cmd: openvpn --genkey --secret pki/ta.key
+    chdir: "{{ openvpn_path }}"
+    creates: "{{ openvpn_path_pki }}/ta.key"
+- name: Copy Configuration Files
+  copy:
+    src: "{{ openvpn_path_pki }}/{{ item }}"
+    dest: "/etc/openvpn/{{ item | basename }}"
+    mode: 0644
+    remote_src: true
+  loop:
+    - ca.crt
+    - dh.pem
+    - ta.key
+    - private/server.key
+    - issued/server.crt
+- name: Copy server.conf To Targets
+  copy:
+    src: templates/server/server.conf
+    dest: /etc/openvpn/
+    force: yes
+- name: Enable ipv4 Forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+  failed_when: false
+- name: Start OpenVPN Server
+  systemd:
+    name: openvpn@server
+    state: started
+    enabled: yes
+- name: Configure Firewall
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    jump: MASQUERADE
+    protocol: all
+    source: 0.0.0.0/0
+    destination: 0.0.0.0/0

@@ -1,0 +1,55 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: vagrant
+  provider:
+    name: libvirt
+  cachier: machine
+  parallel: true
+  default_box: 'ubuntu/focal64'
+
+platforms:
+  - name: db_master
+    config_options:
+      ssh.keep_alive: yes
+      ssh.remote_user: 'vagrant'
+      synced_folder: true
+    box: 'ubuntu/focal64'
+    memory: 512
+    cpus: 1
+
+  - name: db_replica
+    config_options:
+      ssh.keep_alive: yes
+      ssh.remote_user: 'vagrant'
+      synced_folder: true
+    box: 'ubuntu/focal64'
+    memory: 512
+    cpus: 1
+      
+
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      db_master: 
+        postgresql_role: master
+        ansible_ssh_host: 127.0.0.1 
+        ansible_ssh_port: 2222 
+        ansible_ssh_user: vagrant 
+        ansible_ssh_private_key_file: "C:/Users/emperor/ITMO/7 semester/Devops/Lab5/.vagrant/machines/srv1/virtualbox/private_key"
+      db_replica: 
+        postgresql_role: replica
+        ansible_ssh_host: 127.0.0.1 
+        ansible_ssh_port: 2200 
+        ansible_ssh_user: vagrant 
+        ansible_ssh_private_key_file: "C:/Users/emperor/ITMO/7 semester/Devops/Lab5/.vagrant/machines/srv1/virtualbox/private_key"
+
+scenario:
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - verify

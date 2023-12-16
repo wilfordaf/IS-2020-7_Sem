@@ -1,0 +1,62 @@
+- name:  Generate Client Certificate Request
+  command: 
+    cmd: "./easyrsa gen-req {{ item }} nopass"
+    chdir: "{{ openvpn_path }}"
+  with_items:
+    - "{{ users }}"
+- name: Sign Client Certificate Request
+  command: 
+    cmd: "./easyrsa sign-req client {{ item }}"
+    chdir: "{{ openvpn_path }}"
+  with_items:
+    - "{{ users }}"
+- name: Copy Client Configuration Files
+  copy:
+    src: "{{ openvpn_path_pki }}/{{ item }}"
+    dest: "/etc/openvpn/client/{{ item | basename }}"
+    mode: 0644
+    remote_src: true
+  loop:
+    - ca.crt
+    - ta.key
+- name: Copy Client Key
+  copy:
+    src: "{{ openvpn_path_pki }}/private/{{ item }}.key"
+    dest: "/etc/openvpn/client/{{ item }}.key"
+    mode: 0644
+    remote_src: true
+  with_items:
+    - "{{ users }}"
+- name: Copy Client Crt
+  copy:
+    src: "{{ openvpn_path_pki }}/issued/{{ item }}.crt"
+    dest: "/etc/openvpn/client/{{ item }}.crt"
+    mode: 0644
+    remote_src: true
+  with_items:
+    - "{{ users }}"
+- name: Copy Client Configuration File To Targets
+  copy:
+    src: "templates/client/{{ item }}"
+    dest: "{{ openvpn_path }}/{{ item | basename }}"
+  loop:
+    - client.conf
+    - config_gen.sh
+- name: Make Generate Config Script Executable
+  file: 
+    path: "{{ openvpn_path }}/config_gen.sh"
+    mode: 0700 
+- name:  Generate Config 
+  command: 
+    cmd: "./config_gen.sh {{ item }}"
+    chdir: "{{ openvpn_path }}"
+    creates: "~/{{ item }}.ovpn"
+  with_items:
+    - "{{ users }}"
+- name: Copy ovpn Files to Host
+  fetch:
+    src: "~/{{ item }}.ovpn"
+    dest: "{{ playbook_dir }}/{{ inventory_hostname }}-{{ item }}.ovpn"
+    flat: yes
+  with_items:
+    - "{{ users }}"

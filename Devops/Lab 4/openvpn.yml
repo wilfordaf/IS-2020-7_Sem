@@ -1,0 +1,6 @@
+---
+- name: Setup OpenVPN
+  hosts: app
+  become: true
+  roles:
+    - ansible-role-openvpn

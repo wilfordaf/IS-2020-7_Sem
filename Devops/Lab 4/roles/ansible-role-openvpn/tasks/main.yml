@@ -1,0 +1,3 @@
+---
+- include: openvpn-server.yml
+- include: openvpn-client.yml

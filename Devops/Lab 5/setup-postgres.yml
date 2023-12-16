@@ -1,0 +1,91 @@
+---
+- name: Setup PostgreSQL
+  hosts: app
+  vars:
+    pg_configuration_path: /etc/postgresql/12/main
+    pg_data_path: /var/lib/postgresql
+    pg_custom_data_path: /home/vagrant
+  become: true
+  tasks:
+    - name: Install PostgreSQL Dependencies
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - acl
+          - libpq-dev
+          - python3-psycopg2         
+        state: present
+        update-cache: true
+    - name: Allow Access To PostgreSQL Port
+      ufw:
+        rule: allow
+        port: 5432
+        proto: tcp
+    - name: Stop PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: stopped
+      when: pg_custom_data_path is defined
+    - name: Create PostgreSQL Custom Data Dir
+      file: 
+        dest: "{{ pg_custom_data_path }}"
+        recurse: yes
+        state: directory
+      when: pg_custom_data_path is defined
+    - name: Copy Original PostgreSQL Data To Custom Dir If Defined
+      synchronize:
+        src: "{{ pg_data_path }}"
+        dest: "{{ pg_custom_data_path }}"
+        mode: pull
+        archive: yes
+        delete: yes
+        recursive: yes
+      delegate_to: "{{ inventory_hostname }}"
+      when: pg_custom_data_path is defined
+    - name: Rename PostgreSQL directory
+      command:
+        cmd: mv main main.backup
+        chdir: "{{ pg_data_path }}/12"
+        creates: "{{ pg_data_path }}/12/main.backup"
+      when: pg_custom_data_path is defined
+    - name: Set Custom Data Directory If Defined
+      lineinfile: 
+        path: "{{ pg_configuration_path }}/postgresql.conf"
+        regexp: "^(.*)data_directory(.*)$"
+        line: "data_directory = '{{ pg_custom_data_path }}/postgresql/12/main'"
+        backrefs: yes
+      when: pg_custom_data_path is defined
+    - name: Start PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: started
+      when: pg_custom_data_path is defined
+    - name: Add Postgres Config Options
+      blockinfile:
+        path: "{{ pg_configuration_path }}/postgresql.conf"
+        create: yes
+        block: |
+          listen_addresses = '*'
+          wal_level = hot_standby
+          archive_mode = on
+          archive_command = 'cd .'
+          max_wal_senders = 8
+          hot_standby = on
+        marker: "# Config Options"
+    - name: Add Allowed Hosts Mask
+      blockinfile:
+        path: "{{ pg_configuration_path }}/pg_hba.conf"
+        create: yes
+        block: |
+          host all all 0.0.0.0/0 trust
+        marker: "# Allowed Hosts Mask"
+      notify: Restart PostgreSQL Service 
+    - name: Make Postgres Sudoer
+      shell: sudo usermod -a -G sudo postgres
+        
+  handlers:
+    - name: Restart PostgreSQL Service
+      systemd:
+        name: postgresql
+        state: restarted

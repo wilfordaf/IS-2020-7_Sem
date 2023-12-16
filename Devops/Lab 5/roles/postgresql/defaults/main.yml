@@ -1,0 +1,16 @@
+---
+# defaults file for postgresql
+pg_configuration_path: /etc/postgresql/12/main
+pg_data_path: /var/lib/postgresql
+pg_custom_data_path: /home/vagrant
+pg_custom_data_path_postgresql: 
+pg_replica_user: { name: replica, password: replica}
+pg_replicas_addresses: 
+  - 192.168.56.202
+pg_databases:
+  - database1
+pg_users:
+  - { name: user1, password: user1 }
+pg_permissions:
+ - { database: database1, user: user1 }
+pg_master_address: 192.168.56.201

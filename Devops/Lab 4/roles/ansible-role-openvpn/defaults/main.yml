@@ -1,0 +1,5 @@
+---
+openvpn_path: ~/openvpn-ca
+openvpn_path_pki: ~/openvpn-ca/pki
+users: 
+  - client1
