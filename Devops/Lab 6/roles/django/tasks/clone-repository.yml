@@ -1,0 +1,21 @@
+- name: Install Git
+  apt:
+    name: git
+    update-cache: true
+- name: Clone Project Repository
+  git:
+    repo: https://github.com/mdn/django-locallibrary-tutorial
+    dest: "{{ project_path }}"
+    force: true
+- name: Copy Updated Config
+  copy:
+    src: templates/settings.py
+    dest: "{{ project_path }}/locallibrary"
+- name: Copy Updated Urls
+  copy:
+    src: templates/urls.py
+    dest: "{{ project_path }}/locallibrary"
+- name: Copy Updated Requirements
+  copy:
+    src: templates/requirements.txt
+    dest: "{{ project_path }}"

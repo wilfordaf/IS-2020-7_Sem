@@ -1,0 +1,5 @@
+- name: Add Source
+  blockinfile:
+    path: "{{ prometheus_config.path }}"
+    block: "{{ prometheus_scrape_configs }}"
+  notify: Restart Service

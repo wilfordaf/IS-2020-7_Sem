@@ -1,0 +1,20 @@
+---
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-docker.git
+  version: origin/main
+  name: docker
+
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-django.git
+  version: origin/main
+  name: django
+  
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-loki.git
+  version: origin/main
+  name: loki
+  
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-prometheus.git
+  version: origin/main
+  name: prometheus
+  
+- src: git+ssh://git@gitlab.com:wilfordaf-ansible-roles/ansible-role-grafana.git
+  version: origin/main
+  name: grafana

@@ -1,0 +1,21 @@
+- name: Install Dependecies
+  apt:
+    name: "{{ apt_additional_pkg }}"
+    state: present
+    update_cache: yes
+- name: Get Package
+  apt:
+    deb: "{{ grafana_deb_pkg_url }}"
+  notify: Start And Enable Service
+- meta: flush_handlers
+- name: Set Configuration
+  template:
+    src: "{{ grafana_config_file.template }}"
+    dest: "{{ grafana_config_file.path }}"
+  when: grafana_config is defined
+  notify: Restart Service
+
+- include_tasks: "datasources.yml"
+  when: grafana_datasources is defined
+- include_tasks: "dashboards.yml"
+  when: grafana_dashboards is defined

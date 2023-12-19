@@ -1,0 +1,30 @@
+- name: Update Packages
+  apt:
+    name: "{{ loki_additional_pkg }}"
+    update_cache: yes
+- name: Create directories
+  file:
+    name: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ loki_temp_dir }}"
+    - "{{ loki_etc_dir }}"
+- name: Setup Binary Files
+  unarchive:
+    src: "{{ loki_bin.url }}"
+    dest: "{{ loki_temp_dir }}"
+    remote_src: true
+    creates: "{{ loki_temp_dir }}/{{ loki_bin.file }}"
+- name: Download Config File
+  get_url:
+    url: "{{ loki_config.url }}"
+    dest: "{{ loki_temp_dir }}/{{ loki_config.file }}"
+    mode: 0440
+- name: Relocate Files
+  command: "mv {{ item.src }} {{ item.dest }}"
+  with_items: 
+    - src: "{{ loki_temp_dir }}/{{ loki_bin.file }}"
+      dest: "{{ loki_bin.dir }}/"
+    - src: "{{ loki_temp_dir }}/{{ loki_config.file }}"
+      dest: "{{ loki_etc_dir }}/"

@@ -1,0 +1,9 @@
+- name: Add Datasources
+  grafana_datasource:
+    url: "{{ grafana_api_url }}"
+    url_username: "{{ grafana_security.admin_user }}"
+    url_password: "{{ grafana_security.admin_password }}"
+    name: "{{ item.name }}"
+    ds_url: "{{ item.url }}"
+    ds_type: "{{ item.type }}"
+  with_items: "{{ grafana_datasources }}"

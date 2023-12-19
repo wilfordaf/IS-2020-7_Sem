@@ -1,0 +1,28 @@
+- name: Update Packages
+  apt:
+    update_cache: yes
+- name: Create Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items: "{{ prometheus_dirs }}"
+- name: Setup Binary Files
+  unarchive:
+    src: "{{ prometheus_url }}"
+    dest: "{{ prometheus_pkg_path }}"
+    remote_src: true
+    creates: "{{ prometheus_pkg_path_with_pkg_name }}"
+  register: register_prometheus_file
+- name: Relocate Files
+  command: "mv {{ item.src }} {{ item.dest }}"
+  with_items: "{{ prometheus_files_to_move }}"
+  when: register_prometheus_file.changed == True
+- name: Move Config
+  template:
+    src: "{{ prometheus_config.template }}"
+    dest: "{{ prometheus_config.path }}"
+
+- include_tasks: run-service.yml
+- include_tasks: add-source-app.yml
+  when: prometheus_scrape_configs is defined

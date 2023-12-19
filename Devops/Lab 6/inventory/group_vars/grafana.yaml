@@ -1,0 +1,7 @@
+grafana_datasources:
+  - name: prometheus
+    url: http://192.168.56.202:9090
+    type: prometheus
+  - name: loki
+    url: http://192.168.56.202:3100
+    type: loki

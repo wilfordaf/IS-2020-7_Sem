@@ -1,0 +1,14 @@
+[Unit]
+Description=Grafana Loki Service
+After=network.target
+
+[Service]
+User={{ loki_user.name }}
+Group={{ loki_group }}
+Type=simple
+ExecStart={{ loki_bin.dir }}/{{ loki_bin.file }} -config.file="{{ loki_etc_dir }}/{{ loki_config.file }}"
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

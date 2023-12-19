@@ -1,0 +1,25 @@
+- name: Create Group
+  group:
+    name: "{{ prometheus_group }}"
+    system: yes
+    state: present
+- name: Create User
+  user:
+    name: "{{ prometheus_user.name }}"
+    group: "{{ prometheus_group }}"
+    system: yes
+    shell: "{{ prometheus_user.shell }}"
+- name: Chown Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ prometheus_user.name }}"
+    group: "{{ prometheus_group }}"
+    mode: 0775
+  with_items: "{{ prometheus_dirs }}"
+- name: Create Service
+  template:
+    src: "{{ prometheus_systemd.template }}"
+    dest: "{{ prometheus_systemd.path }}"
+  notify: Start and Enable Service

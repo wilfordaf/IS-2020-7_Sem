@@ -1,0 +1,15 @@
+---
+- name: Install Django App
+  hosts: app
+  become: true
+  roles:
+    - docker
+    - django
+    
+- name: Install Monitoring
+  hosts: web
+  become: true
+  roles:
+    - loki
+    - prometheus
+    - grafana
